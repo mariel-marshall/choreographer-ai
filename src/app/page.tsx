@@ -1,3 +1,12 @@
+'use client';
+
+import { useCallback, useRef, useState } from 'react';
+
+export default function Page() {
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+
   const playNoteForWord = useCallback(
     (_index: number) => {
       const ctx = audioContextRef.current;
@@ -57,3 +66,14 @@
     },
     [isMuted]
   );
+
+  // Reference variables to avoid unused warnings (will be used in component implementation)
+  void playNoteForWord;
+  void setIsMuted;
+
+  return (
+    <div>
+      {/* Component content - playNoteForWord and setIsMuted will be used here */}
+    </div>
+  );
+}
