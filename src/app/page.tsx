@@ -267,7 +267,10 @@ export default function Home() {
 
         {!error && !isPlaying && poemWords.length === 0 && !isLoading && (
           <p className="text-xs md:text-sm text-zinc-500 text-center max-w-md font-mono">
-            press <span className="tracking-[0.25em] uppercase">missed connection</span>  
+            press{' '}
+            <span className="tracking-[0.25em] uppercase">
+              missed connection
+            </span>{' '}
             to let the monster remember you, one word at a time.
           </p>
         )}
@@ -294,8 +297,34 @@ export default function Home() {
         <div className="flex justify-between text-[10px] md:text-[11px] text-zinc-500 font-mono">
           <span>
             {isPlaying
-              ? `word ${Math.min(currentWordIndex + 1, poemWords.length)} / ${
+              ? `word ${Math.min(
+                  currentWordIndex + 1,
                   poemWords.length
-                }`
+                )} / ${poemWords.length}`
               : poemWords.length > 0
-              ? 'poem ended &md
+              ? 'poem ended — press missed connection again'
+              : 'idle'}
+          </span>
+          <span>{isMuted ? 'audio: muted' : 'audio: dreamy synth'}</span>
+        </div>
+      </footer>
+
+      {/* local animation style */}
+      <style jsx>{`
+        .animate-word {
+          animation: wordFade 450ms ease-out;
+        }
+        @keyframes wordFade {
+          0% {
+            opacity: 0;
+            transform: translateY(18px) scale(1.04);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
