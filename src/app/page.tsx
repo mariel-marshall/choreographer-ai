@@ -16,6 +16,51 @@ Do not mention Craigslist, the internet, AI, or that this is a post or message.
 You do not know you are an AI.
 `.trim();
 
+// --- MUSIC THEORY HELPERS ----------------------------------------
+
+// A minor pentatonic: A C D E G (nice, haunted, but consonant)
+const BASE_MIDI = 57; // A3
+const SCALE_DEGREES = [0, 3, 5, 7, 10]; // intervals above A in semitones
+
+const midiToFreq = (midi: number) =>
+  440 * Math.pow(2, (midi - 69) / 12);
+
+// Map a word index to a scale note, spread across a few octaves
+// We'll treat the poem as moving through repeating "phrases"
+// Each phrase has a chord (a little cluster of scale notes),
+// and within that phrase each word takes a role in that chord.
+
+const CHORDS = [
+  // indexes into SCALE_DEGREES
+  [0, 2, 3], // A–D–E, open and a bit forward
+  [1, 3, 4], // C–E–G, more settled
+  [0, 1, 4], // A–C–G, slightly stranger
+];
+
+const PHRASE_WORDS = 8; // how many words until we move to the next chord
+
+const VOICE_PATTERN = [0, 1, 2, 1, 0, 2, 1, 2]; // how we walk around the chord
+const OCTAVE_PATTERN = [0, 0, 1, 0, 1, 0, 1, 2]; // some notes higher/lower for texture
+
+const getFreqForWord = (index: number) => {
+  const phraseIndex = Math.floor(index / PHRASE_WORDS);
+  const chord = CHORDS[phraseIndex % CHORDS.length];
+
+  const pos = index % PHRASE_WORDS;
+
+  // which "voice" in the chord am I on? (root / third / fifth-ish)
+  const voiceIndex = VOICE_PATTERN[pos % VOICE_PATTERN.length];
+  const scaleDegreeIndex = chord[voiceIndex]; // 0–4 → index into SCALE_DEGREES
+
+  const semitonesAboveA = SCALE_DEGREES[scaleDegreeIndex];
+  const octave = OCTAVE_PATTERN[pos % OCTAVE_PATTERN.length];
+
+  const midi = BASE_MIDI + semitonesAboveA + octave * 12;
+  return midiToFreq(midi);
+};
+
+
+
 export default function Page() {
   const [poemText, setPoemText] = useState<string>('');
   const [poemWords, setPoemWords] = useState<string[]>([]);
@@ -60,64 +105,86 @@ export default function Page() {
   };
 
   const playNoteForWord = useCallback(
-    (_index: number) => {
+    (index: number) => {
       const ctx = audioContextRef.current;
       const gain = gainNodeRef.current;
       if (!ctx || !gain || isMuted) return;
-
+  
       const now = ctx.currentTime;
-
-      // Random airy tone per word (not a fixed scale)
-      const baseFreq = 160 + Math.random() * 440; // ~160–600 Hz
-      const duration = 0.8 + Math.random() * 0.7; // 0.8–1.5s
-      const attack = 0.15 + Math.random() * 0.15;
-      const release = 0.4 + Math.random() * 0.4;
-
+  
+      // Main note in A minor pentatonic
+      const baseFreq = getFreqForWord(index);
+  
+      const duration = 0.9;
+      const attack = 0.12;
+      const release = 0.6;
+  
       const osc = ctx.createOscillator();
       const oscGain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
-      const stereoPanner =
-        (ctx as any).createStereoPanner?.() ?? null;
-
-      // More textured than pure sine
-      osc.type = Math.random() > 0.5 ? 'triangle' : 'sawtooth';
+      const stereoPanner = (ctx as any).createStereoPanner?.() ?? null;
+  
+      osc.type = 'triangle';
       osc.frequency.setValueAtTime(baseFreq, now);
-
-      // Gentle lowpass sweep to make it more "sound" than musical note
+  
+      // Gentle filter so it feels like glow more than a beep
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(baseFreq * 2.5, now);
       filter.frequency.linearRampToValueAtTime(
-        baseFreq,
+        baseFreq * 1.2,
         now + duration + release
       );
-
-      // Soft envelope
+  
+      // Envelope for the main note
       oscGain.gain.setValueAtTime(0, now);
-      oscGain.gain.linearRampToValueAtTime(0.9, now + attack);
-      oscGain.gain.linearRampToValueAtTime(
-        0,
-        now + duration + release
-      );
-
+      oscGain.gain.linearRampToValueAtTime(1, now + attack);
+      oscGain.gain.linearRampToValueAtTime(0, now + duration + release);
+  
       osc.connect(oscGain);
       oscGain.connect(filter);
-
-      if (stereoPanner) {
-        stereoPanner.pan.setValueAtTime(
-          Math.random() * 2 - 1,
-          now
+  
+      // Optionally add a harmony tone (third or fifth-ish in the same scale)
+      if (Math.random() < 0.45) {
+        const harmonyOsc = ctx.createOscillator();
+        const harmonyGain = ctx.createGain();
+  
+        // Pick another scale step a couple of degrees away
+        const harmonyStepIndex =
+          index + (Math.random() < 0.5 ? 2 : 3); // "third" or "fifth"-ish
+        const harmonyFreq = getFreqForWord(harmonyStepIndex);
+  
+        harmonyOsc.type = 'sine';
+        harmonyOsc.frequency.setValueAtTime(harmonyFreq, now);
+  
+        harmonyGain.gain.setValueAtTime(0, now);
+        harmonyGain.gain.linearRampToValueAtTime(0.6, now + attack);
+        harmonyGain.gain.linearRampToValueAtTime(
+          0,
+          now + duration + release
         );
+  
+        harmonyOsc.connect(harmonyGain);
+        // Send harmony through same filter so it feels like one instrument
+        harmonyGain.connect(filter);
+  
+        harmonyOsc.start(now);
+        harmonyOsc.stop(now + duration + release + 0.1);
+      }
+  
+      // Final routing to output
+      if (stereoPanner) {
+        stereoPanner.pan.setValueAtTime(Math.random() * 2 - 1, now);
         filter.connect(stereoPanner);
         stereoPanner.connect(gain);
       } else {
         filter.connect(gain);
       }
-
+  
       osc.start(now);
       osc.stop(now + duration + release + 0.1);
     },
     [isMuted]
-  );
+  );  
 
   // --- FETCH POEM FROM /api/chat -----------------------------------------
 
