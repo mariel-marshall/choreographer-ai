@@ -221,7 +221,7 @@ export default function Page() {
       <header className="relative z-10 flex items-center justify-between px-4 py-3 md:px-8">
         <div className="space-y-1">
           <h1 className="text-xs tracking-[0.4em] uppercase text-zinc-400 font-mono">
-            Toronto Missed Connection Synth
+            Toronto Missed Connection Poet
           </h1>
           <p className="text-[10px] md:text-xs text-zinc-500 font-mono">
             each word is a sound &mdash; each sound is you
