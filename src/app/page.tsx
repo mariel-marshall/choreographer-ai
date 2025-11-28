@@ -67,11 +67,11 @@ type GhostWord = {
 export const metadata = {
   title: 'Toronto Missed Connection Poet',
   description:
-    'An AI poet fine-tuned on Toronto missed connections. Each visit writes you a new monologue, one word, one tone, one ghostly echo at a time.',
+    'An AI poet fine-tuned on Toronto missed connections.',
   openGraph: {
     title: 'Toronto Missed Connection Poet',
     description:
-      'An AI poet fine-tuned on Toronto missed connections. Each visit writes you a new monologue, one word, one tone, one ghostly echo at a time.',
+      'An AI poet fine-tuned on Toronto missed connections.',
     url: 'https://missed-connections-ai.vercel.app/',
     siteName: 'Missed Connections AI',
     images: [
