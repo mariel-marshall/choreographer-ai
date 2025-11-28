@@ -436,17 +436,32 @@ export default function Page() {
           </div>
         )}
 
-        {!error && !isPlaying && poemWords.length === 0 && !isLoading && (
-          <div className="w-full flex-1 flex items-center justify-center">
-            <p className="text-xs md:text-sm text-zinc-500 text-center max-w-md font-mono">
-              press{' '}
-              <span className="tracking-[0.25em] uppercase">
-                missed connection
-              </span>{' '}
-              to let the monster remember you, one word at a time.
-            </p>
-          </div>
-        )}
+      {!error && !isPlaying && !isLoading && (
+        <div className="w-full flex-1 flex flex-col items-center justify-center gap-4">
+          <p className="text-xs md:text-sm text-zinc-500 text-center max-w-md font-mono">
+            the monster is quiet, waiting for you.
+          </p>
+
+          <button
+            type="button"
+            onClick={async () => {
+              await ensureAudioRunning();
+              await startNewPoem();
+            }}
+            className="relative inline-flex items-center justify-center border border-zinc-300 px-6 py-3
+                      text-xs md:text-sm font-mono tracking-[0.25em] uppercase
+                      text-zinc-100 hover:bg-zinc-100 hover:text-black transition-colors"
+          >
+            missed connection
+            <RefreshCcw size={14} className="ml-2 opacity-70" />
+          </button>
+
+          <p className="text-[10px] text-zinc-600 font-mono">
+            or use the button in the top right.
+          </p>
+        </div>
+      )}
+
 
         {!error && (isPlaying || poemWords.length > 0) && (
           <>
