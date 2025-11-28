@@ -5,8 +5,20 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'AI Poet Chatbot',
-  description: 'Fine-tuned AI model that generates missed connections',
+  title: 'Missed Connections',
+  description: 'A Toronto Missed Connection poet.',
+  openGraph: {
+    title: 'Missed Connections',
+    description: 'A Toronto Missed Connection poet.',
+    url: 'https://missed-connections-ai.vercel.app',
+    siteName: 'Missed Connections',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Missed Connections',
+    description: 'A Toronto Missed Connection poet.',
+  },
 };
 
 export default function RootLayout({
