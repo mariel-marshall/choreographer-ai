@@ -59,6 +59,14 @@ const getFreqForWord = (index: number) => {
   return midiToFreq(midi);
 };
 
+type GhostWord = {
+  id: string;
+  text: string;
+  x: number;       // percentage across the screen
+  y: number;       // percentage down the screen
+  rotation: number;
+  createdAt: number;
+};
 
 
 export default function Page() {
@@ -70,7 +78,7 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [revealPositions, setRevealPositions] = useState<number[]>([]);
   const [isMuted, setIsMuted] = useState(false);
-  
+  const [ghostWords, setGhostWords] = useState<GhostWord[]>([]);  
 
   // Audio refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -199,6 +207,7 @@ export default function Page() {
       setPoemWords([]);
       setCurrentWordIndex(0);
       setRevealPositions([]);
+      setGhostWords([]);
 
       initAudio();
 
@@ -272,14 +281,33 @@ export default function Page() {
       setIsPlaying(false);
       return;
     }
-
+  
     // Play sound for this word
     playNoteForWord(currentWordIndex);
-
+  
     const timeout = setTimeout(() => {
+      const word = poemWords[currentWordIndex];
+      if (word) {
+        setGhostWords((prev) => {
+          const now = Date.now();
+          const next: GhostWord = {
+            id: `${currentWordIndex}-${now}`,
+            text: word,
+            x: 15 + Math.random() * 70, // keep in central-ish band
+            y: 15 + Math.random() * 70,
+            rotation: (Math.random() - 0.5) * 12, // slight tilt
+            createdAt: now,
+          };
+  
+          // limit number of ghosts so it doesn't go insane
+          const trimmed = [...prev, next].slice(-40);
+          return trimmed;
+        });
+      }
+  
       setCurrentWordIndex((prev) => prev + 1);
     }, WORD_DELAY_MS);
-
+  
     return () => clearTimeout(timeout);
   }, [isPlaying, poemWords, currentWordIndex, playNoteForWord]);
 
@@ -290,6 +318,19 @@ export default function Page() {
       await ctx.resume();
     }
   };
+
+  useEffect(() => {
+    if (ghostWords.length === 0) return;
+  
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setGhostWords((prev) =>
+        prev.filter((g) => now - g.createdAt < 4000) // 4s lifetime
+      );
+    }, 500);
+  
+    return () => clearInterval(interval);
+  }, [ghostWords.length]);
 
   // --- RENDER -------------------------------------------------------------
 
