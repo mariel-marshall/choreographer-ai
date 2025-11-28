@@ -25,11 +25,7 @@ const SCALE_DEGREES = [0, 3, 5, 7, 10]; // intervals above A in semitones
 const midiToFreq = (midi: number) =>
   440 * Math.pow(2, (midi - 69) / 12);
 
-// Map a word index to a scale note, spread across a few octaves
-// We'll treat the poem as moving through repeating "phrases"
-// Each phrase has a chord (a little cluster of scale notes),
-// and within that phrase each word takes a role in that chord.
-
+// chords inside that scale
 const CHORDS = [
   // indexes into SCALE_DEGREES
   [0, 2, 3], // A–D–E, open and a bit forward
@@ -68,7 +64,6 @@ type GhostWord = {
   createdAt: number;
 };
 
-
 export default function Page() {
   const [poemText, setPoemText] = useState<string>('');
   const [poemWords, setPoemWords] = useState<string[]>([]);
@@ -78,7 +73,7 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [revealPositions, setRevealPositions] = useState<number[]>([]);
   const [isMuted, setIsMuted] = useState(false);
-  const [ghostWords, setGhostWords] = useState<GhostWord[]>([]);  
+  const [ghostWords, setGhostWords] = useState<GhostWord[]>([]);
 
   // Audio refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -119,24 +114,24 @@ export default function Page() {
       const ctx = audioContextRef.current;
       const gain = gainNodeRef.current;
       if (!ctx || !gain || isMuted) return;
-  
+
       const now = ctx.currentTime;
-  
+
       // Main note in A minor pentatonic
       const baseFreq = getFreqForWord(index);
-  
+
       const duration = 0.9;
       const attack = 0.12;
       const release = 0.6;
-  
+
       const osc = ctx.createOscillator();
       const oscGain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
       const stereoPanner = (ctx as any).createStereoPanner?.() ?? null;
-  
+
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(baseFreq, now);
-  
+
       // Gentle filter so it feels like glow more than a beep
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(baseFreq * 2.5, now);
@@ -144,43 +139,43 @@ export default function Page() {
         baseFreq * 1.2,
         now + duration + release
       );
-  
+
       // Envelope for the main note
       oscGain.gain.setValueAtTime(0, now);
       oscGain.gain.linearRampToValueAtTime(1, now + attack);
       oscGain.gain.linearRampToValueAtTime(0, now + duration + release);
-  
+
       osc.connect(oscGain);
       oscGain.connect(filter);
-  
+
       // Optionally add a harmony tone (third or fifth-ish in the same scale)
       if (Math.random() < 0.45) {
         const harmonyOsc = ctx.createOscillator();
         const harmonyGain = ctx.createGain();
-  
+
         // Pick another scale step a couple of degrees away
         const harmonyStepIndex =
           index + (Math.random() < 0.5 ? 2 : 3); // "third" or "fifth"-ish
         const harmonyFreq = getFreqForWord(harmonyStepIndex);
-  
+
         harmonyOsc.type = 'sine';
         harmonyOsc.frequency.setValueAtTime(harmonyFreq, now);
-  
+
         harmonyGain.gain.setValueAtTime(0, now);
         harmonyGain.gain.linearRampToValueAtTime(0.6, now + attack);
         harmonyGain.gain.linearRampToValueAtTime(
           0,
           now + duration + release
         );
-  
+
         harmonyOsc.connect(harmonyGain);
         // Send harmony through same filter so it feels like one instrument
         harmonyGain.connect(filter);
-  
+
         harmonyOsc.start(now);
         harmonyOsc.stop(now + duration + release + 0.1);
       }
-  
+
       // Final routing to output
       if (stereoPanner) {
         stereoPanner.pan.setValueAtTime(Math.random() * 2 - 1, now);
@@ -189,12 +184,12 @@ export default function Page() {
       } else {
         filter.connect(gain);
       }
-  
+
       osc.start(now);
       osc.stop(now + duration + release + 0.1);
     },
     [isMuted]
-  );  
+  );
 
   // --- FETCH POEM FROM /api/chat -----------------------------------------
 
@@ -235,34 +230,33 @@ export default function Page() {
         typeof assistantMessage === 'string'
           ? assistantMessage
           : assistantMessage.content;
-          const cleaned = text.trim();
-          const words = cleaned.split(/\s+/).filter(Boolean);
-          
-          if (words.length === 0) {
-            throw new Error('The poem was empty or could not be parsed.');
-          }
-          
-          // Build an array of character indices in `cleaned` where each word ends.
-          // We keep whitespace & line breaks exactly as they are in the original text.
-          const tokens = cleaned.split(/(\s+)/); // keep whitespace tokens
-          let cumulative = '';
-          const positions: number[] = [];
-          
-          for (const token of tokens) {
-            cumulative += token;
-            if (!/^\s+$/.test(token)) {
-              // non-whitespace token → counts as a word
-              positions.push(cumulative.length);
-            }
-          }
-          
-          setPoemText(cleaned);
-          setPoemWords(words);
-          setRevealPositions(positions);
-          setCurrentWordIndex(0);
-          setIsPlaying(true);
-          
 
+      const cleaned = text.trim();
+      const words = cleaned.split(/\s+/).filter(Boolean);
+
+      if (words.length === 0) {
+        throw new Error('The poem was empty or could not be parsed.');
+      }
+
+      // Build an array of character indices in `cleaned` where each word ends.
+      // We keep whitespace & line breaks exactly as they are in the original text.
+      const tokens = cleaned.split(/(\s+)/); // keep whitespace tokens
+      let cumulative = '';
+      const positions: number[] = [];
+
+      for (const token of tokens) {
+        cumulative += token;
+        if (!/^\s+$/.test(token)) {
+          // non-whitespace token → counts as a word
+          positions.push(cumulative.length);
+        }
+      }
+
+      setPoemText(cleaned);
+      setPoemWords(words);
+      setRevealPositions(positions);
+      setCurrentWordIndex(0);
+      setIsPlaying(true);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Something went wrong.');
@@ -281,10 +275,10 @@ export default function Page() {
       setIsPlaying(false);
       return;
     }
-  
+
     // Play sound for this word
     playNoteForWord(currentWordIndex);
-  
+
     const timeout = setTimeout(() => {
       const word = poemWords[currentWordIndex];
       if (word) {
@@ -293,24 +287,21 @@ export default function Page() {
           const next: GhostWord = {
             id: `${currentWordIndex}-${now}`,
             text: word,
-            x: Math.random() * 100,  // 0–100% across
-            y: Math.random() * 100,  // 0–100% down            
-            rotation: (Math.random() - 0.5) * 12, // slight tilt
+            x: Math.random() * 100,  // anywhere across the screen
+            y: Math.random() * 100,  // anywhere top–bottom
+            rotation: (Math.random() - 0.5) * 12,
             createdAt: now,
           };
 
-          console.log('NEW GHOST', next); // <— add this
-
-  
           // limit number of ghosts so it doesn't go insane
           const trimmed = [...prev, next].slice(-40);
           return trimmed;
         });
       }
-  
+
       setCurrentWordIndex((prev) => prev + 1);
     }, WORD_DELAY_MS);
-  
+
     return () => clearTimeout(timeout);
   }, [isPlaying, poemWords, currentWordIndex, playNoteForWord]);
 
@@ -324,42 +315,62 @@ export default function Page() {
 
   useEffect(() => {
     if (ghostWords.length === 0) return;
-  
+
     const interval = setInterval(() => {
       const now = Date.now();
       setGhostWords((prev) =>
         prev.filter((g) => now - g.createdAt < 4000) // 4s lifetime
       );
     }, 500);
-  
+
     return () => clearInterval(interval);
   }, [ghostWords.length]);
 
   // --- RENDER -------------------------------------------------------------
 
   const currentWord =
-  poemWords.length > 0 && currentWordIndex < poemWords.length
-    ? poemWords[currentWordIndex]
-    : '';
+    poemWords.length > 0 && currentWordIndex < poemWords.length
+      ? poemWords[currentWordIndex]
+      : '';
 
-let revealedText = '';
+  let revealedText = '';
 
-if (poemText && poemWords.length > 0) {
-  if (!isPlaying && currentWordIndex >= poemWords.length) {
-    revealedText = poemText;
-  } else if (revealPositions.length > 0) {
-    const safeIndex = Math.min(
-      currentWordIndex,
-      revealPositions.length - 1
-    );
-    revealedText = poemText.slice(0, revealPositions[safeIndex]);
+  if (poemText && poemWords.length > 0) {
+    if (!isPlaying && currentWordIndex >= poemWords.length) {
+      revealedText = poemText;
+    } else if (revealPositions.length > 0) {
+      const safeIndex = Math.min(
+        currentWordIndex,
+        revealPositions.length - 1
+      );
+      revealedText = poemText.slice(0, revealPositions[safeIndex]);
+    }
   }
-}
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
       {/* Subtle gradient & grainy vibe */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.12),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(255,255,255,0.05),_transparent_60%)] opacity-70" />
+
+      {/* Global ink ghosts over the whole screen */}
+      <div className="pointer-events-none absolute inset-0 overflow-visible">
+        {ghostWords.map((g) => (
+          <span
+            key={g.id}
+            className="absolute text-[14vw] sm:text-[12vw] md:text-[10vw] lg:text-[8vw]
+                       font-black tracking-[0.12em] uppercase
+                       text-zinc-200/30 mix-blend-screen blur-sm drop-shadow-[0_0_20px_rgba(255,255,255,0.25)]
+                       ink-word"
+            style={{
+              top: `${g.y}%`,
+              left: `${g.x}%`,
+              transform: `translate(-50%, -50%) rotate(${g.rotation}deg)`,
+            }}
+          >
+            {g.text}
+          </span>
+        ))}
+      </div>
 
       {/* Top bar: title + controls */}
       <header className="relative z-10 flex items-center justify-between px-4 py-3 md:px-8">
@@ -415,67 +426,56 @@ if (poemText && poemWords.length > 0) {
         </div>
       </header>
 
-      {/* Center word */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4">
+      {/* Main content */}
+      <main className="relative z-10 flex-1 flex flex-col px-4 md:px-8 py-4 md:py-6">
         {error && (
-          <div className="text-center text-xs md:text-sm text-red-400 font-mono">
-            {error}
+          <div className="w-full flex-1 flex items-center justify-center">
+            <div className="text-center text-xs md:text-sm text-red-400 font-mono">
+              {error}
+            </div>
           </div>
         )}
 
         {!error && !isPlaying && poemWords.length === 0 && !isLoading && (
-          <p className="text-xs md:text-sm text-zinc-500 text-center max-w-md font-mono">
-            press{' '}
-            <span className="tracking-[0.25em] uppercase">
-              missed connection
-            </span>{' '}
-            to let the monster remember you, one word at a time.
-          </p>
+          <div className="w-full flex-1 flex items-center justify-center">
+            <p className="text-xs md:text-sm text-zinc-500 text-center max-w-md font-mono">
+              press{' '}
+              <span className="tracking-[0.25em] uppercase">
+                missed connection
+              </span>{' '}
+              to let the monster remember you, one word at a time.
+            </p>
+          </div>
         )}
 
-{!error && (isPlaying || poemWords.length > 0) && (
-  <div className="w-full flex flex-col items-center justify-center gap-6 relative">
-    {/* ink ghosts */}
-    <div className="pointer-events-none absolute inset-0 overflow-visible">
-    {ghostWords.map((g) => (
-        <span
-        key={g.id}
-        className="absolute text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[12vw]
-                   font-black tracking-[0.12em] uppercase
-                   text-white/60 mix-blend-screen drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]
-                   ink-word"
-        style={{
-          top: `${g.y}%`,
-          left: `${g.x}%`,
-          transform: `translate(-50%, -50%) rotate(${g.rotation}deg)`,
-        }}
-      >
-        {g.text}
-      </span>
-      ))}
-    </div>
+        {!error && (isPlaying || poemWords.length > 0) && (
+          <>
+            {/* center word area */}
+            <div className="flex-1 flex items-center justify-center">
+              <span
+                key={currentWordIndex}
+                className="inline-block text-center 
+                           text-[18vw] sm:text-[15vw] md:text-[12vw] lg:text-[10vw]
+                           leading-[0.9]
+                           font-black tracking-[0.12em] uppercase
+                           text-zinc-50 break-words
+                           drop-shadow-[0_0_22px_rgba(255,255,255,0.28)]
+                           animate-word"
+              >
+                {currentWord}
+              </span>
+            </div>
 
-      {/* main current word */}
-      <span
-      key={currentWordIndex}
-      className="absolute text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[12vw]
-                font-black tracking-[0.12em] uppercase
-                text-white/60 mix-blend-screen drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]
-                ink-word"
-      style={{ ... }}
-    >
-      {currentWord}
-    </span>
-
-      {revealedText && (
-        <p className="max-w-2xl text-xs md:text-sm text-zinc-400 text-center whitespace-pre-wrap font-mono leading-relaxed">
-          {revealedText}
-        </p>
-      )}
-    </div>
-  )}
-
-
+            {/* full poem area at bottom */}
+            {revealedText && (
+              <div className="mt-4 mb-2 flex justify-center">
+                <p className="max-w-4xl w-full text-sm md:text-base lg:text-lg text-zinc-300 whitespace-pre-wrap font-mono leading-relaxed md:leading-loose text-left">
+                  {revealedText}
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </main>
 
       {/* Small debug / status footer (optional) */}
@@ -497,41 +497,41 @@ if (poemText && poemWords.length > 0) {
 
       {/* local animation style */}
       <style jsx>{`
-  .animate-word {
-    animation: wordFade 450ms ease-out;
-  }
-  @keyframes wordFade {
-    0% {
-      opacity: 0;
-      transform: translateY(18px) scale(1.04);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
+        .animate-word {
+          animation: wordFade 450ms ease-out;
+        }
+        @keyframes wordFade {
+          0% {
+            opacity: 0;
+            transform: translateY(18px) scale(1.04);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
 
-  .ink-word {
-    animation: inkFade 3.2s ease-out forwards;
-  }
-  @keyframes inkFade {
-    0% {
-      opacity: 0;
-      filter: blur(0px);
-      transform: translate(-50%, -50%) scale(1);
-    }
-    40% {
-      opacity: 0.5;
-      filter: blur(2px);
-      transform: translate(-50%, -50%) scale(1.04);
-    }
-    100% {
-      opacity: 0;
-      filter: blur(5px);
-      transform: translate(-50%, -50%) scale(1.08);
-    }
-  }
-`}</style>
+        .ink-word {
+          animation: inkFade 3.2s ease-out forwards;
+        }
+        @keyframes inkFade {
+          0% {
+            opacity: 0;
+            filter: blur(0px);
+            transform: translate(-50%, -50%) scale(1);
+          }
+          40% {
+            opacity: 0.5;
+            filter: blur(2px);
+            transform: translate(-50%, -50%) scale(1.04);
+          }
+          100% {
+            opacity: 0;
+            filter: blur(5px);
+            transform: translate(-50%, -50%) scale(1.08);
+          }
+        }
+      `}</style>
     </div>
   );
 }
