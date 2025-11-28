@@ -293,8 +293,8 @@ export default function Page() {
           const next: GhostWord = {
             id: `${currentWordIndex}-${now}`,
             text: word,
-            x: 15 + Math.random() * 70, // keep in central-ish band
-            y: 15 + Math.random() * 70,
+            x: Math.random() * 100,  // 0–100% across
+            y: Math.random() * 100,  // 0–100% down            
             rotation: (Math.random() - 0.5) * 12, // slight tilt
             createdAt: now,
           };
@@ -436,8 +436,8 @@ if (poemText && poemWords.length > 0) {
 {!error && (isPlaying || poemWords.length > 0) && (
   <div className="w-full flex flex-col items-center justify-center gap-6 relative">
     {/* ink ghosts */}
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {ghostWords.map((g) => (
+    <div className="pointer-events-none absolute inset-0 overflow-visible">
+    {ghostWords.map((g) => (
         <span
         key={g.id}
         className="absolute text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[12vw]
@@ -457,17 +457,15 @@ if (poemText && poemWords.length > 0) {
 
       {/* main current word */}
       <span
-        key={currentWordIndex}
-        className="inline-block text-center 
-                  text-[18vw] sm:text-[15vw] md:text-[12vw] lg:text-[10vw]
-                  leading-[0.9]
-                  font-black tracking-[0.12em] uppercase
-                  text-zinc-50 break-words
-                  drop-shadow-[0_0_22px_rgba(255,255,255,0.28)]
-                  animate-word relative"
-      >
-        {currentWord}
-      </span>
+      key={currentWordIndex}
+      className="absolute text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[12vw]
+                font-black tracking-[0.12em] uppercase
+                text-white/60 mix-blend-screen drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]
+                ink-word"
+      style={{ ... }}
+    >
+      {currentWord}
+    </span>
 
       {revealedText && (
         <p className="max-w-2xl text-xs md:text-sm text-zinc-400 text-center whitespace-pre-wrap font-mono leading-relaxed">
