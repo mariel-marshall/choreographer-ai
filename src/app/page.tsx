@@ -324,7 +324,7 @@ if (poemText && poemWords.length > 0) {
             Toronto Missed Connection Poet
           </h1>
           <p className="text-[10px] md:text-xs text-zinc-500 font-mono">
-            each word is a sound &mdash; each sound is you
+            You disappeared before I could tell you...
           </p>
         </div>
 
