@@ -379,7 +379,7 @@ export default function Page() {
             Toronto Missed Connection Poet
           </h1>
           <p className="text-[10px] md:text-xs text-zinc-500 font-mono">
-            You disappeared before I could tell you...
+            A new poem every time.
           </p>
         </div>
 
@@ -439,7 +439,7 @@ export default function Page() {
       {!error && !isPlaying && !isLoading && (
         <div className="w-full flex-1 flex flex-col items-center justify-center gap-4">
           <p className="text-xs md:text-sm text-zinc-500 text-center max-w-md font-mono">
-            the monster is quiet, waiting for you.
+            You disappeared before I could tell you this...
           </p>
 
           <button
