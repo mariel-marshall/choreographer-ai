@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'AI Poet Chatbot',
-  description: 'A chatbot that speaks in poetic verse',
+  description: 'Fine-tuned AI model that generates missed connections',
 };
 
 export default function RootLayout({
