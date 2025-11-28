@@ -298,6 +298,9 @@ export default function Page() {
             rotation: (Math.random() - 0.5) * 12, // slight tilt
             createdAt: now,
           };
+
+          console.log('NEW GHOST', next); // <— add this
+
   
           // limit number of ghosts so it doesn't go insane
           const trimmed = [...prev, next].slice(-40);
@@ -430,28 +433,50 @@ if (poemText && poemWords.length > 0) {
           </p>
         )}
 
-        {!error && (isPlaying || poemWords.length > 0) && (
-          <div className="w-full flex flex-col items-center justify-center gap-6">
-            <span
-              key={currentWordIndex} // force animation per word
-              className="inline-block text-center 
-                        text-[18vw] sm:text-[15vw] md:text-[12vw] lg:text-[10vw]
-                        leading-[0.9]
-                        font-black tracking-[0.12em] uppercase
-                        text-zinc-50 break-words
-                        drop-shadow-[0_0_22px_rgba(255,255,255,0.28)]
-                        animate-word"
-            >
-              {currentWord}
-            </span>
+{!error && (isPlaying || poemWords.length > 0) && (
+  <div className="w-full flex flex-col items-center justify-center gap-6 relative">
+    {/* ink ghosts */}
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {ghostWords.map((g) => (
+        <span
+        key={g.id}
+        className="absolute text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[12vw]
+                   font-black tracking-[0.12em] uppercase
+                   text-white/60 mix-blend-screen drop-shadow-[0_0_35px_rgba(255,255,255,0.35)]
+                   ink-word"
+        style={{
+          top: `${g.y}%`,
+          left: `${g.x}%`,
+          transform: `translate(-50%, -50%) rotate(${g.rotation}deg)`,
+        }}
+      >
+        {g.text}
+      </span>
+      ))}
+    </div>
 
-            {revealedText && (
-              <p className="max-w-2xl text-xs md:text-sm text-zinc-400 text-center whitespace-pre-wrap font-mono leading-relaxed">
-                {revealedText}
-              </p>
-            )}
-          </div>
-        )}
+      {/* main current word */}
+      <span
+        key={currentWordIndex}
+        className="inline-block text-center 
+                  text-[18vw] sm:text-[15vw] md:text-[12vw] lg:text-[10vw]
+                  leading-[0.9]
+                  font-black tracking-[0.12em] uppercase
+                  text-zinc-50 break-words
+                  drop-shadow-[0_0_22px_rgba(255,255,255,0.28)]
+                  animate-word relative"
+      >
+        {currentWord}
+      </span>
+
+      {revealedText && (
+        <p className="max-w-2xl text-xs md:text-sm text-zinc-400 text-center whitespace-pre-wrap font-mono leading-relaxed">
+          {revealedText}
+        </p>
+      )}
+    </div>
+  )}
+
 
       </main>
 
@@ -474,20 +499,41 @@ if (poemText && poemWords.length > 0) {
 
       {/* local animation style */}
       <style jsx>{`
-        .animate-word {
-          animation: wordFade 450ms ease-out;
-        }
-        @keyframes wordFade {
-          0% {
-            opacity: 0;
-            transform: translateY(18px) scale(1.04);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-      `}</style>
+  .animate-word {
+    animation: wordFade 450ms ease-out;
+  }
+  @keyframes wordFade {
+    0% {
+      opacity: 0;
+      transform: translateY(18px) scale(1.04);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .ink-word {
+    animation: inkFade 3.2s ease-out forwards;
+  }
+  @keyframes inkFade {
+    0% {
+      opacity: 0;
+      filter: blur(0px);
+      transform: translate(-50%, -50%) scale(1);
+    }
+    40% {
+      opacity: 0.5;
+      filter: blur(2px);
+      transform: translate(-50%, -50%) scale(1.04);
+    }
+    100% {
+      opacity: 0;
+      filter: blur(5px);
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+  }
+`}</style>
     </div>
   );
 }
