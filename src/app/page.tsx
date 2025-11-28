@@ -68,7 +68,9 @@ export default function Page() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [revealPositions, setRevealPositions] = useState<number[]>([]);
   const [isMuted, setIsMuted] = useState(false);
+  
 
   // Audio refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -196,6 +198,7 @@ export default function Page() {
       setPoemText('');
       setPoemWords([]);
       setCurrentWordIndex(0);
+      setRevealPositions([]);
 
       initAudio();
 
@@ -223,18 +226,34 @@ export default function Page() {
         typeof assistantMessage === 'string'
           ? assistantMessage
           : assistantMessage.content;
+          const cleaned = text.trim();
+          const words = cleaned.split(/\s+/).filter(Boolean);
+          
+          if (words.length === 0) {
+            throw new Error('The poem was empty or could not be parsed.');
+          }
+          
+          // Build an array of character indices in `cleaned` where each word ends.
+          // We keep whitespace & line breaks exactly as they are in the original text.
+          const tokens = cleaned.split(/(\s+)/); // keep whitespace tokens
+          let cumulative = '';
+          const positions: number[] = [];
+          
+          for (const token of tokens) {
+            cumulative += token;
+            if (!/^\s+$/.test(token)) {
+              // non-whitespace token → counts as a word
+              positions.push(cumulative.length);
+            }
+          }
+          
+          setPoemText(cleaned);
+          setPoemWords(words);
+          setRevealPositions(positions);
+          setCurrentWordIndex(0);
+          setIsPlaying(true);
+          
 
-      const cleaned = text.trim();
-      const words = cleaned.split(/\s+/).filter(Boolean);
-
-      if (words.length === 0) {
-        throw new Error('The poem was empty or could not be parsed.');
-      }
-
-      setPoemText(cleaned);
-      setPoemWords(words);
-      setCurrentWordIndex(0);
-      setIsPlaying(true);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Something went wrong.');
@@ -275,9 +294,23 @@ export default function Page() {
   // --- RENDER -------------------------------------------------------------
 
   const currentWord =
-    poemWords.length > 0 && currentWordIndex < poemWords.length
-      ? poemWords[currentWordIndex]
-      : '';
+  poemWords.length > 0 && currentWordIndex < poemWords.length
+    ? poemWords[currentWordIndex]
+    : '';
+
+let revealedText = '';
+
+if (poemText && poemWords.length > 0) {
+  if (!isPlaying && currentWordIndex >= poemWords.length) {
+    revealedText = poemText;
+  } else if (revealPositions.length > 0) {
+    const safeIndex = Math.min(
+      currentWordIndex,
+      revealPositions.length - 1
+    );
+    revealedText = poemText.slice(0, revealPositions[safeIndex]);
+  }
+}
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
@@ -357,21 +390,28 @@ export default function Page() {
         )}
 
         {!error && (isPlaying || poemWords.length > 0) && (
-          <div className="w-full flex items-center justify-center">
+          <div className="w-full flex flex-col items-center justify-center gap-6">
             <span
               key={currentWordIndex} // force animation per word
               className="inline-block text-center 
-                         text-[18vw] sm:text-[15vw] md:text-[12vw] lg:text-[10vw]
-                         leading-[0.9]
-                         font-black tracking-[0.12em] uppercase
-                         text-zinc-50 break-words
-                         drop-shadow-[0_0_22px_rgba(255,255,255,0.28)]
-                         animate-word"
+                        text-[18vw] sm:text-[15vw] md:text-[12vw] lg:text-[10vw]
+                        leading-[0.9]
+                        font-black tracking-[0.12em] uppercase
+                        text-zinc-50 break-words
+                        drop-shadow-[0_0_22px_rgba(255,255,255,0.28)]
+                        animate-word"
             >
               {currentWord}
             </span>
+
+            {revealedText && (
+              <p className="max-w-2xl text-xs md:text-sm text-zinc-400 text-center whitespace-pre-wrap font-mono leading-relaxed">
+                {revealedText}
+              </p>
+            )}
           </div>
         )}
+
       </main>
 
       {/* Small debug / status footer (optional) */}
