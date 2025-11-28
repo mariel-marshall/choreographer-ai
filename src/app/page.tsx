@@ -64,6 +64,36 @@ type GhostWord = {
   createdAt: number;
 };
 
+export const metadata = {
+  title: 'Toronto Missed Connection Poet',
+  description:
+    'An AI poet fine-tuned on Toronto missed connections. Each visit writes you a new monologue, one word, one tone, one ghostly echo at a time.',
+  openGraph: {
+    title: 'Toronto Missed Connection Poet',
+    description:
+      'An AI poet fine-tuned on Toronto missed connections. Each visit writes you a new monologue, one word, one tone, one ghostly echo at a time.',
+    url: 'https://missed-connections-ai.vercel.app/',
+    siteName: 'Missed Connections AI',
+    images: [
+      {
+        url: 'https://missed-connections-ai.vercel.app/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Large ghostly white word on black background with drifting text fragments.',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Toronto Missed Connection Poet',
+    description:
+      'An AI poet fine-tuned on Toronto missed connections. Each visit writes you a new monologue, one word, one tone, one ghostly echo at a time.',
+    images: ['https://missed-connections-ai.vercel.app/og-image.png'],
+  },
+};
+
 export default function Page() {
   const [poemText, setPoemText] = useState<string>('');
   const [poemWords, setPoemWords] = useState<string[]>([]);
